@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
 <title>بيننا دخيل - النسخة المتقدمة</title>
 <link class="apple-touch-icon" href="./icon-192.png">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎭</text></svg>\">
-<link href=\"https://fonts.googleapis.com/css2?family=Cairo:wght=400;600;700;900&display=swap\" rel=\"stylesheet\">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎭</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght=400;600;700;900&display=swap" rel="stylesheet">
 
-<script src=\"https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js\"></script>
-<script src=\"https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js\"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
   :root {
@@ -357,7 +357,7 @@
   }
   .question-box.revealed .tap-hint { display: none; }
 
-  /* ── DISCUSS SCREEN (أوفلاين فقط حالياً) ── */
+  /* ── DISCUSS SCREEN ── */
   .big-emoji { font-size: 3rem; text-align: center; margin: 8px 0 12px; }
   .instruction-box {
     background: var(--surface2);
@@ -383,14 +383,14 @@
     font-size: 0.88rem;
   }
 
-  /* ── CHAT SYSTEM SYSTEM ── */
+  /* ── CHAT SYSTEM ── */
   .chat-box-container {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--surface2);
     display: flex;
     flex-direction: column;
-    height: 260px; /* تم تكبير حجم الشات الكلي لتعويض خانات الأونلاين المدمجة */
+    height: 260px; 
     margin-top: 10px;
     overflow: hidden;
   }
@@ -613,7 +613,6 @@
 <body>
 
 <script>
-  // تفعيل الـ Service Worker برمجياً لدعم الـ PWA والتثبيت أوفلاين
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js')
@@ -923,7 +922,6 @@
 </div>
 
 <script>
-// تلبية لطلبك: دمج محتويات ملف imposter_library.json المرفق بالكامل ليكون هو مكتبة الأسئلة الافتراضية
 const INITIAL_LIBRARY = [
   {
     "category": "شخصيات",
@@ -1012,7 +1010,7 @@ const firebaseConfig = { databaseURL: "https://the-intruder-among-us-default-rtd
 if (typeof firebase !== 'undefined') { firebase.initializeApp(firebaseConfig); }
 
 let state = {
-  gameMode: 'offline', // offline, online-host, online-guest
+  gameMode: 'offline', 
   players: [],
   myPlayerName: '',
   roomCode: '',
@@ -1256,9 +1254,15 @@ function listenToRoomUpdates() {
     
     document.getElementById('lobby-category-display').textContent = data.chosenCategoryName || 'عشوائية';
     renderPlayerList();
-    if (data.chat) { renderChatBox(data.chat, 'lobby-chat-messages'); }
+    if (data.chat) { 
+      if (document.getElementById('screen-players').classList.contains('active')) {
+        renderChatBox(data.chat, 'lobby-chat-messages'); 
+      }
+      if (document.getElementById('screen-reveal').classList.contains('active')) {
+        renderChatBox(data.chat, 'chat-messages'); 
+      }
+    }
     
-    // إدارة حالات اللعبة السحابية أونلاين والانتقال التلقائي الصامت
     if (data.gameState === 'questionPhase') {
       if (!document.getElementById('screen-question').classList.contains('active') && !document.getElementById('screen-waiting').classList.contains('active')) {
         state.currentCategoryName = data.currentCategoryName;
@@ -1279,9 +1283,7 @@ function listenToRoomUpdates() {
         state.questionImposter = data.questionImposter;
         state.imposterIdx = data.imposterIdx;
         state.answers = data.answers || {};
-        if (data.chat) { renderChatBox(data.chat, 'chat-messages'); }
         showOnlineRevealScreen();
-      } else {
         if (data.chat) { renderChatBox(data.chat, 'chat-messages'); }
       }
     }
@@ -1470,6 +1472,7 @@ function clickStartGame() {
 
 function renderChatBox(chatData, containerId) {
   const chatMessagesBox = document.getElementById(containerId);
+  if (!chatMessagesBox) return;
   if (!chatData) {
     chatMessagesBox.innerHTML = '<div style="color:var(--muted); font-size:0.8rem; text-align:center; padding-top:10px;">لا توجد رسائل بعد، أرسل سلاماً للاعبين! 👋</div>';
     return;
@@ -1555,7 +1558,6 @@ function submitOnlineAnswer() {
   }
 }
 
-// تعديل برمجي: فحص اكتمال الإجابات والانتقال المباشر بدلاً من صفحة "قولوا إجاباتكم"
 function checkAnswersCompletion() {
   dbRef.child('answers').once('value', (snap) => {
     const ansData = snap.val() || {};
@@ -1671,9 +1673,7 @@ function cancelLobbyReply() {
 function sendLobbyChatMessage() {
   const inp = document.getElementById('lobby-chat-input');
   const msg = inp.value.trim();
-  if (!msg) return;
-  const msgRef = dbRef.child('lobby_chat').push();
-  if (!dbRef) return;
+  if (!msg || !dbRef) return;
   const msgListRef = dbRef.child('chat').push();
   const messagePayload = {
     sender: state.myPlayerName,
@@ -1782,13 +1782,11 @@ function calcOfflineAndDisplayResults() {
   const imposterName = state.players[state.imposterIdx];
   let tally = {};
   state.players.forEach(p => tally[p] = 0);
-  
   Object.values(state.votes).forEach(target => { if (tally[target] !== undefined) tally[target]++; });
   
   let maxVotes = -1;
   let votedOutName = '';
   let tie = false;
-  
   for (const name in tally) {
     if (tally[name] > maxVotes) { maxVotes = tally[name]; votedOutName = name; tie = false; }
     else if (tally[name] === maxVotes) { tie = true; }
@@ -1850,7 +1848,6 @@ function calculateOnlineScoresAndFinish() {
 }
 
 function displayFinalCalculatedResults() {
-  if (state.gameMode === 'offline') return;
   dbRef.child('roundResultsData').once('value', (snap) => {
     const res = snap.val();
     if (res) {
@@ -1864,11 +1861,9 @@ function renderFinalUIElements(imposterName, success, V, roundScores) {
   document.getElementById('result-imposter-q-display').textContent = state.questionImposter;
   const outBox = document.getElementById('outcome-box');
   if (success) {
-    document.getElementById('result-emoji').innerHTML = '🎉';
     outBox.className = 'outcome-box outcome-success';
     outBox.textContent = `✅ نجح الفريق في كشف الجاسوس! صوّت ${V} لاعب بشكل صحيح.`;
   } else {
-    document.getElementById('result-emoji').innerHTML = '😈';
     outBox.className = 'outcome-box outcome-fail';
     outBox.textContent = `❌ فاز الدخيل المخادع! لم يحصّل الفريق أغلبية الأصوات المطلوب تحقيقها.`;
   }
@@ -2017,7 +2012,6 @@ document.addEventListener('click', (e) => {
 
 function renderLibrary() {
   const el = document.getElementById('lib-list');
-  const optionsBox = document.getElementById('dropdown-options-box');
   if (!state.library.length) {
     el.innerHTML = '<div class="empty-state">المكتبة فارغة تماماً. قم بإنشاء فئة جديدة أدناه!</div>';
     return;
@@ -2081,7 +2075,7 @@ function addSubcategoryToCategory() {
   const catIdxStr = document.getElementById('select-category-target').value;
   if (catIdxStr === "") { customAlert("برجاء تحديد الفئة المستهدفة أولاً!", "⚠️"); return; }
   const catIdx = parseInt(catIdxStr);
-  customPrompt("أدخل اسم أو رقم المجموعة الجديدة:", "مثال: 1 أو كرتون ززمان...", (subName) => {
+  customPrompt("أدخل اسم أو رقم المجموعة الجديدة:", "مثال: 1 أو كرتون زمان...", (subName) => {
     if (!subName) return;
     if (!state.library[catIdx].subcategories) state.library[catIdx].subcategories = [];
     if (state.library[catIdx].subcategories.some(s => s.name === subName)) { customAlert("هذه المجموعة موجودة بالفعل في هذه الفئة!", "⚠️"); return; }
