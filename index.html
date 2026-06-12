@@ -1264,15 +1264,14 @@ function listenToRoomUpdates() {
     }
     
     if (data.gameState === 'questionPhase') {
+      state.answers = data.answers || {};
       if (!document.getElementById('screen-question').classList.contains('active') && !document.getElementById('screen-waiting').classList.contains('active')) {
         state.currentCategoryName = data.currentCategoryName;
         state.questionNormal = data.questionNormal;
         state.questionImposter = data.questionImposter;
         state.imposterIdx = data.imposterIdx;
-        state.answers = data.answers || {};
         startOnlineQuestionPhase();
       } else {
-        state.answers = data.answers || {};
         if (state.gameMode === 'online-host') { checkAnswersCompletion(); }
       }
     }
@@ -1288,11 +1287,10 @@ function listenToRoomUpdates() {
       }
     }
     if (data.gameState === 'votePhase') {
+      state.votes = data.votes || {};
       if (!document.getElementById('screen-vote').classList.contains('active') && !document.getElementById('screen-waiting').classList.contains('active')) {
-        state.votes = data.votes || {};
         startOnlineVotePhase();
       } else {
-        state.votes = data.votes || {};
         if (state.gameMode === 'online-host') { checkVotesCompletion(); }
       }
     }
@@ -1550,6 +1548,7 @@ function submitOnlineAnswer() {
   ansField.disabled = true;
   document.getElementById('online-submit-answer-btn').disabled = true;
   
+  state.answers[state.myPlayerName] = myAns;
   dbRef.child('answers/' + state.myPlayerName).set(myAns);
   document.getElementById('waiting-screen-msg').textContent = "تم إرسال إجابتك السريعة للغرفة! بانتظار كتابة بقية الأعضاء لإجاباتهم للنقاش التلقائي المباشر...";
   showScreen('screen-waiting');
@@ -1559,13 +1558,11 @@ function submitOnlineAnswer() {
 }
 
 function checkAnswersCompletion() {
-  dbRef.child('answers').once('value', (snap) => {
-    const ansData = snap.val() || {};
-    const count = Object.keys(ansData).length;
-    if (count >= state.players.length && state.players.length > 0) {
-      dbRef.child('gameState').set('revealPhase');
-    }
-  });
+  if (state.gameMode !== 'online-host') return;
+  const count = Object.keys(state.answers).length;
+  if (count >= state.players.length && state.players.length > 0) {
+    dbRef.child('gameState').set('revealPhase');
+  }
 }
 
 function nextPlayerQuestion() {
@@ -1759,6 +1756,7 @@ function confirmVote() {
       calcOfflineAndDisplayResults();
     }
   } else {
+    state.votes[state.myPlayerName] = state.currentVoteSelection;
     dbRef.child('votes/' + state.myPlayerName).set(state.currentVoteSelection);
     document.getElementById('waiting-screen-msg').textContent = "تم تسجيل صوتك بنجاح! بانتظار إتمام بقية الأعضاء لعملية التصويت السري...";
     showScreen('screen-waiting');
@@ -1769,13 +1767,11 @@ function confirmVote() {
 }
 
 function checkVotesCompletion() {
-  dbRef.child('votes').once('value', (snap) => {
-    const votData = snap.val() || {};
-    const count = Object.keys(votData).length;
-    if (count >= state.players.length && state.players.length > 0) {
-      calculateOnlineScoresAndFinish();
-    }
-  });
+  if (state.gameMode !== 'online-host') return;
+  const count = Object.keys(state.votes).length;
+  if (count >= state.players.length && state.players.length > 0) {
+    calculateOnlineScoresAndFinish();
+  }
 }
 
 function calcOfflineAndDisplayResults() {
